@@ -77,7 +77,7 @@ const suggestions: Record<string, { title: string, suggestions: { title: string,
 }
 
 const page = () => {
-  const [suggestionCategory, setSuggestionCategory] = useState("demarches-administratives");
+  const [suggestionCategory, setSuggestionCategory] = useState("");
   const [selectedSuggestions, setSelectedSuggestions] = useState<string[]>([]);
 
   const prompt = useMemo(() => {
