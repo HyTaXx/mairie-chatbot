@@ -1,61 +1,67 @@
 "use client";
-import React from "react";
-import { useState } from "react";
 
-// Helper function to render the response
+import { useState, useEffect, useRef } from "react";
+import { Clipboard, Pin } from "lucide-react";
+
 const renderResponse = (response: string) => {
     return (
         <div className="space-y-4 text-gray-800 leading-relaxed">
             {response.split("\n").map((line, index) => {
-                // Vérifier si une ligne est un titre principal
                 if (line.startsWith("# ")) {
-                    const title = line.replace(/^# /, "").trim();
                     return (
                         <h1
-                            key={index}
-                            className="text-2xl font-bold text-gray-900"
+                            key={`${index}-header`}
+                            className="text-xl font-bold text-gray-900 mb-2"
                         >
-                            {title}
+                            {line.replace("# ", "").trim()}
                         </h1>
                     );
                 }
-
-                // Vérifier si une ligne est un sous-titre
                 if (line.startsWith("## ")) {
-                    const subtitle = line.replace(/^## /, "").trim();
                     return (
                         <h2
-                            key={index}
-                            className="text-xl font-bold text-gray-800"
+                            key={`${index}-subheader`}
+                            className="text-lg font-semibold text-gray-800 mb-1"
                         >
-                            {subtitle}
+                            {line.replace("## ", "").trim()}
                         </h2>
                     );
                 }
-
-                // Vérifier si la ligne commence par une puce ou un numéro
-                if (line.startsWith("- ") || line.match(/^\d+\./)) {
-                    const content = line.replace(/^(-|\d+\.)\s*/, "").trim();
+                if (line.startsWith("### ")) {
                     return (
-                        <li key={index} className="list-disc list-inside ml-6">
-                            {content}
+                        <h3
+                            key={`${index}-subsubheader`}
+                            className="text-md font-semibold text-gray-800 mb-1"
+                        >
+                            {line.replace("### ", "").trim()}
+                        </h3>
+                    );
+                }
+                if (line.startsWith("**") && line.endsWith("**")) {
+                    return (
+                        <p key={`${index}-bold`} className="font-bold">
+                            {line.replace(/\*\*/g, "").trim()}
+                        </p>
+                    );
+                }
+                if (line.startsWith("- ") || line.match(/^\d+\./)) {
+                    return (
+                        <li
+                            key={`${index}-list`}
+                            className="list-disc list-inside ml-6"
+                        >
+                            {line.replace(/^(-|\d+\.)\s*/, "").trim()}
                         </li>
                     );
                 }
-
-                // Vérifier si la ligne contient un lien Markdown
                 const linkRegex = /\[([^\]]+)\]\(([^)]+)\)/g;
                 if (linkRegex.test(line)) {
-                    // Diviser le texte en parties avec ou sans lien
                     const parts = [];
                     let lastIndex = 0;
-
                     line.replace(linkRegex, (match, text, url, offset) => {
-                        // Ajouter le texte avant le lien
                         if (offset > lastIndex) {
                             parts.push(line.slice(lastIndex, offset));
                         }
-                        // Ajouter le lien cliquable
                         parts.push(
                             <a
                                 key={`${index}-${offset}`}
@@ -70,18 +76,14 @@ const renderResponse = (response: string) => {
                         lastIndex = offset + match.length;
                         return match;
                     });
-
-                    // Ajouter le texte après le dernier lien
                     if (lastIndex < line.length) {
                         parts.push(line.slice(lastIndex));
                     }
-
-                    // Retourner les parties combinées dans un paragraphe
                     return (
-                        <p key={index}>
+                        <p key={`${index}-paragraph`}>
                             {parts.map((part, i) =>
                                 typeof part === "string" ? (
-                                    <span key={i}>{part}</span>
+                                    <span key={`${index}-${i}`}>{part}</span>
                                 ) : (
                                     part
                                 )
@@ -89,32 +91,72 @@ const renderResponse = (response: string) => {
                         </p>
                     );
                 }
-
-                // Par défaut, rendre la ligne comme un paragraphe
-                return <p key={index}>{line.trim()}</p>;
+                const urlRegex = /(http[s]?:\/\/[^\s]+)/g;
+                if (urlRegex.test(line)) {
+                    return (
+                        <p key={`${index}-url`}>
+                            {line.split(urlRegex).map((part, i) =>
+                                urlRegex.test(part) ? (
+                                    <a
+                                        key={`${index}-${i}`}
+                                        href={part}
+                                        className="text-blue-600 underline"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                    >
+                                        {part}
+                                    </a>
+                                ) : (
+                                    part
+                                )
+                            )}
+                        </p>
+                    );
+                }
+                return (
+                    <p key={`${index}-text`} className="text-gray-700">
+                        {line.trim()}
+                    </p>
+                );
             })}
         </div>
     );
 };
 
-// Usage in the UI
 export default function ChatbotPage() {
-    const [message, setMessage] = useState("");
-    const [response, setResponse] = useState<string | null>(null);
+    const [messages, setMessages] = useState<
+        { role: "user" | "assistant"; content: string; id: number }[]
+    >([]);
+    const [pinnedMessages, setPinnedMessages] = useState<
+        { id: number; content: string }[]
+    >([]);
+    const [input, setInput] = useState("");
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const messagesEndRef = useRef<HTMLDivElement | null>(null);
+
+    const nextMessageId = useRef(1);
+
+    useEffect(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    }, [messages]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        if (!input.trim()) return;
+
+        setMessages((prev) => [
+            ...prev,
+            { role: "user", content: input, id: nextMessageId.current++ },
+        ]);
+        setInput("");
         setLoading(true);
-        setError(null);
-        setResponse("");
 
         try {
             const res = await fetch("/api/chat", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ userMessage: message }),
+                body: JSON.stringify({ userMessage: input }),
             });
 
             if (!res.ok) {
@@ -124,59 +166,174 @@ export default function ChatbotPage() {
             const reader = res.body?.getReader();
             const decoder = new TextDecoder();
             let done = false;
+            let assistantResponse = "";
 
             while (!done) {
                 const { value, done: doneReading } = await reader!.read();
                 done = doneReading;
                 const chunk = decoder.decode(value, { stream: true });
-                setResponse((prev) => prev + chunk); // Ajouter le texte en flux
+                assistantResponse += chunk;
+
+                setMessages((prev) => {
+                    const lastMessage = prev[prev.length - 1];
+                    if (lastMessage?.role === "assistant") {
+                        return [
+                            ...prev.slice(0, -1),
+                            {
+                                role: "assistant",
+                                content: assistantResponse,
+                                id: lastMessage.id,
+                            },
+                        ];
+                    }
+                    return [
+                        ...prev,
+                        {
+                            role: "assistant",
+                            content: assistantResponse,
+                            id: nextMessageId.current++,
+                        },
+                    ];
+                });
             }
         } catch (err: any) {
             setError(err.message);
+            setMessages((prev) => [
+                ...prev,
+                {
+                    role: "assistant",
+                    content: "Erreur lors de la réponse.",
+                    id: nextMessageId.current++,
+                },
+            ]);
         } finally {
             setLoading(false);
         }
     };
 
+    const cleanAndTruncateText = (text: string, length: number) => {
+        // Remove Markdown-specific characters
+        const cleanedText = text
+            .replace(/[#*_\-`]/g, "") // Remove Markdown symbols
+            .replace(/\n+/g, " ") // Replace newlines with spaces
+            .trim();
+        // Truncate the text to the specified length
+        return cleanedText.length > length
+            ? `${cleanedText.slice(0, length)}...`
+            : cleanedText;
+    };
+
+    const handleCopy = (content: string) => {
+        navigator.clipboard.writeText(content);
+        alert("Texte copié !");
+    };
+
+    const handlePin = (id: number, content: string) => {
+        setPinnedMessages((prev) =>
+            prev.find((msg) => msg.id === id)
+                ? prev
+                : [...prev, { id, content }]
+        );
+    };
+
     return (
-        <div className="flex min-h-screen items-center justify-center p-4">
-            <div className="w-full max-w-2xl bg-white p-6 rounded-lg shadow-md">
-                <h1 className="text-2xl font-bold mb-4">
-                    Chatbot de la Mairie d&apos;Antony
-                </h1>
-                <form onSubmit={handleSubmit} className="space-y-4">
-                    <label htmlFor="message" className="block font-medium">
-                        Entrez votre question :
-                    </label>
-                    <input
-                        id="message"
-                        type="text"
-                        value={message}
-                        onChange={(e) => setMessage(e.target.value)}
-                        placeholder="Ex: Quels sont les horaires d'ouverture ?"
-                        className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        required
-                    />
-                    <button
-                        type="submit"
-                        disabled={loading}
-                        className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 disabled:opacity-50"
+        <div className="flex h-screen">
+            {/* Pinned Messages */}
+            <div className="w-1/4 p-4 overflow-y-auto">
+                <h2 className="text-lg font-bold mb-4">Messages Épinglés</h2>
+                {pinnedMessages.map((message) => (
+                    <a
+                        key={message.id}
+                        href={`#${message.id}`}
+                        className="block hover:underline mb-2 hover:bg-slate-200 p-2 rounded-lg"
                     >
-                        {loading ? "Chargement..." : "Envoyer"}
-                    </button>
-                </form>
+                        {cleanAndTruncateText(message.content, 50)}
+                    </a>
+                ))}
+            </div>
 
-                {error && (
-                    <p className="mt-4 text-sm text-red-500">
-                        Erreur : {error}
-                    </p>
-                )}
+            {/* Chat Messages */}
+            <div className="flex-1 flex flex-col">
+                <div className="flex-1 overflow-y-auto p-4">
+                    <hr />
 
-                {response && (
-                    <div className="mt-6 p-6 bg-gray-50 rounded-lg shadow">
-                        {renderResponse(response)}
-                    </div>
-                )}
+                    {messages.map((message) => (
+                        <div
+                            key={message.id}
+                            id={message.id.toString()}
+                            className={`mb-4 ${
+                                message.role === "user"
+                                    ? "text-right"
+                                    : "text-left"
+                            }`}
+                        >
+                            {/* Chat Message Bubble */}
+                            <div
+                                className={`inline-block max-w-md p-3 rounded-lg ${
+                                    message.role === "user"
+                                        ? "bg-blue-500 text-white"
+                                        : "bg-gray-200 text-gray-900"
+                                }`}
+                            >
+                                {message.role === "assistant"
+                                    ? renderResponse(message.content)
+                                    : message.content}
+                            </div>
+
+                            {/* Action Buttons */}
+                            {message.role === "assistant" && (
+                                <div className="mt-2 flex justify-start space-x-4">
+                                    <button
+                                        onClick={() =>
+                                            handleCopy(message.content)
+                                        }
+                                        className="text-gray-500 hover:text-gray-700 flex items-center"
+                                    >
+                                        <Clipboard size={18} />
+                                        <span className="ml-1 text-sm">
+                                            Copier
+                                        </span>
+                                    </button>
+                                    <button
+                                        onClick={() =>
+                                            handlePin(
+                                                message.id,
+                                                message.content
+                                            )
+                                        }
+                                        className="text-gray-500 hover:text-gray-700 flex items-center"
+                                    >
+                                        <Pin size={18} />
+                                        <span className="ml-1 text-sm">
+                                            Épingler
+                                        </span>
+                                    </button>
+                                </div>
+                            )}
+                        </div>
+                    ))}
+                    <div ref={messagesEndRef} />
+                </div>
+
+                {/* Input Box */}
+                <div className="bg-white p-4 border-t border-gray-300">
+                    <form onSubmit={handleSubmit} className="flex items-center">
+                        <input
+                            type="text"
+                            value={input}
+                            onChange={(e) => setInput(e.target.value)}
+                            placeholder="Entrez votre message..."
+                            className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                        <button
+                            type="submit"
+                            disabled={loading}
+                            className="ml-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50"
+                        >
+                            {loading ? "Chargement..." : "Envoyer"}
+                        </button>
+                    </form>
+                </div>
             </div>
         </div>
     );

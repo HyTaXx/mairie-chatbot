@@ -31,7 +31,7 @@ export async function POST(req: NextRequest) {
                 Toutes tes réponses doivent être au format **Markdown**. Structure les réponses ainsi :
 
                 - Les titres doivent utiliser les symboles \`#\`, \`##\`, \`###\`, etc.
-                - Les listes doivent utiliser \`-\` ou \`*\`.
+                - Les listes doivent utiliser \`-\` ou \`*\` mais pas de \`**\`.
                 - Les liens doivent utiliser le format \`[texte](url)\`.
                 - Les paragraphes doivent être séparés par des sauts de ligne.
                 - Les tableaux doivent utiliser le format Markdown des tableaux.
