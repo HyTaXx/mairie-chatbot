@@ -3,6 +3,15 @@
 import { useState, useEffect, useRef } from "react";
 import { Clipboard, Pin, Info, Wrench, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+  } from "@/components/ui/dialog"
+  
 
 const renderResponse = (response: string) => {
     return (
@@ -232,10 +241,10 @@ export default function ChatbotPage() {
     };
 
     const handleClearSession = () => {
-        localStorage.removeItem("chatMessages");
+        /*localStorage.removeItem("chatMessages");
         localStorage.removeItem("pinnedMessages");
         setMessages([]);
-        setPinnedMessages([]);
+        setPinnedMessages([]);*/
     };
 
     const cleanAndTruncateText = (text: string, length: number) => {
@@ -249,6 +258,7 @@ export default function ChatbotPage() {
     };
 
     const handleCopy = (content: string) => {
+        //TODO UPDATE
         navigator.clipboard.writeText(content);
         alert("Texte copié !");
     };
@@ -302,9 +312,21 @@ export default function ChatbotPage() {
                         <a href="/aide">Aide</a>
                     </div>
                     <hr />
-                    <Button onClick={handleClearSession}>
-                        Quitter la session
+                    <Button className="bg-[#293670]" onClick={handleClearSession}>
+                        Réinitiliser les conversations
                     </Button>
+                    <Dialog>
+                        <DialogTrigger className="bg-[#293670] text-white p-2 rounded-md text-sm">Quitter la session</DialogTrigger>
+                        <DialogContent>
+                            <DialogHeader>
+                            <DialogTitle className="bg-yellow-200 text-center p-[4px] text-xs self-center w-[150px] rounded">Fin de conversation</DialogTitle>
+                            <DialogDescription>
+                                Merci d'avoir utilisé Hill ! A bientôt ! 👋
+                                <Button><a href="/">Retourner à l'accueil</a></Button>
+                            </DialogDescription>
+                            </DialogHeader>
+                        </DialogContent>
+                    </Dialog>
                 </div>
             </div>
 
