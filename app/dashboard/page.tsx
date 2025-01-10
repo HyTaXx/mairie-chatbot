@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { Clipboard, Pin } from "lucide-react";
+import { Clipboard, Pin, Info, Wrench, Send } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 const renderResponse = (response: string) => {
     return (
@@ -126,20 +127,39 @@ const renderResponse = (response: string) => {
 export default function ChatbotPage() {
     const [messages, setMessages] = useState<
         { role: "user" | "assistant"; content: string; id: number }[]
-    >([]);
+    >(() => {
+        const savedMessages = localStorage.getItem("chatMessages");
+        return savedMessages ? JSON.parse(savedMessages) : [];
+    });
+
     const [pinnedMessages, setPinnedMessages] = useState<
         { id: number; content: string }[]
-    >([]);
+    >(() => {
+        const savedPinned = localStorage.getItem("pinnedMessages");
+        return savedPinned ? JSON.parse(savedPinned) : [];
+    });
+
     const [input, setInput] = useState("");
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const messagesEndRef = useRef<HTMLDivElement | null>(null);
 
-    const nextMessageId = useRef(1);
+    const nextMessageId = useRef(
+        messages.length > 0 ? messages[messages.length - 1].id + 1 : 1
+    );
 
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     }, [messages]);
+
+    // Save messages and pinned messages to localStorage on change
+    useEffect(() => {
+        localStorage.setItem("chatMessages", JSON.stringify(messages));
+    }, [messages]);
+
+    useEffect(() => {
+        localStorage.setItem("pinnedMessages", JSON.stringify(pinnedMessages));
+    }, [pinnedMessages]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -211,13 +231,18 @@ export default function ChatbotPage() {
         }
     };
 
+    const handleClearSession = () => {
+        localStorage.removeItem("chatMessages");
+        localStorage.removeItem("pinnedMessages");
+        setMessages([]);
+        setPinnedMessages([]);
+    };
+
     const cleanAndTruncateText = (text: string, length: number) => {
-        // Remove Markdown-specific characters
         const cleanedText = text
-            .replace(/[#*_\-`]/g, "") // Remove Markdown symbols
-            .replace(/\n+/g, " ") // Replace newlines with spaces
+            .replace(/[#*_\-`]/g, "")
+            .replace(/\n+/g, " ")
             .trim();
-        // Truncate the text to the specified length
         return cleanedText.length > length
             ? `${cleanedText.slice(0, length)}...`
             : cleanedText;
@@ -237,25 +262,56 @@ export default function ChatbotPage() {
     };
 
     return (
-        <div className="flex h-screen">
-            {/* Pinned Messages */}
-            <div className="w-1/4 p-4 overflow-y-auto">
-                <h2 className="text-lg font-bold mb-4">Messages Épinglés</h2>
-                {pinnedMessages.map((message) => (
-                    <a
-                        key={message.id}
-                        href={`#${message.id}`}
-                        className="block hover:underline mb-2 hover:bg-slate-200 p-2 rounded-lg"
-                    >
-                        {cleanAndTruncateText(message.content, 50)}
-                    </a>
-                ))}
+        <div className="flex h-screen p-4">
+            {/* Sidebar */}
+            <div className="w-1/4 p-4 overflow-y-auto flex flex-col justify-between">
+                <div>
+                    <div className="">
+                        <img src="logo-placeholder.png" alt="" width={40} />
+                    </div>
+                    <div className="flex gap-2 items-center mt-8">
+                        <Pin fill="black" />
+                        <h2 className="text-lg font-bold mb-4 items-center h-[24px]">
+                            Épinglés
+                        </h2>
+                    </div>
+                    <div className="relative border-l-2 border-slate-200 pl-2 ml-2">
+                        {pinnedMessages.map((message) => (
+                            <div
+                                key={message.id}
+                                className="relative flex items-center mb-4 hover:bg-slate-200 p-2 rounded-lg"
+                            >
+                                <a
+                                    href={`#${message.id}`}
+                                    className="pl-4 block text-gray-800 hover:underline"
+                                >
+                                    {cleanAndTruncateText(message.content, 50)}
+                                </a>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+                <div className="flex flex-col gap-4">
+                    <hr />
+                    <div className="flex flex-row gap-2">
+                        <Info />
+                        <a href="/support">Support</a>
+                    </div>
+                    <div className="flex flex-row gap-2">
+                        <Wrench fill="black" />
+                        <a href="/aide">Aide</a>
+                    </div>
+                    <hr />
+                    <Button onClick={handleClearSession}>
+                        Quitter la session
+                    </Button>
+                </div>
             </div>
 
             {/* Chat Messages */}
             <div className="flex-1 flex flex-col">
                 <div className="flex-1 overflow-y-auto p-4">
-                    <hr />
+                    <hr className="pb-4" />
 
                     {messages.map((message) => (
                         <div
@@ -267,7 +323,6 @@ export default function ChatbotPage() {
                                     : "text-left"
                             }`}
                         >
-                            {/* Chat Message Bubble */}
                             <div
                                 className={`inline-block max-w-md p-3 rounded-lg ${
                                     message.role === "user"
@@ -280,7 +335,6 @@ export default function ChatbotPage() {
                                     : message.content}
                             </div>
 
-                            {/* Action Buttons */}
                             {message.role === "assistant" && (
                                 <div className="mt-2 flex justify-start space-x-4">
                                     <button
@@ -289,7 +343,7 @@ export default function ChatbotPage() {
                                         }
                                         className="text-gray-500 hover:text-gray-700 flex items-center"
                                     >
-                                        <Clipboard size={18} />
+                                        <Clipboard size={18} fill="black" />
                                         <span className="ml-1 text-sm">
                                             Copier
                                         </span>
@@ -303,7 +357,7 @@ export default function ChatbotPage() {
                                         }
                                         className="text-gray-500 hover:text-gray-700 flex items-center"
                                     >
-                                        <Pin size={18} />
+                                        <Pin size={18} fill="black" />
                                         <span className="ml-1 text-sm">
                                             Épingler
                                         </span>
@@ -315,22 +369,24 @@ export default function ChatbotPage() {
                     <div ref={messagesEndRef} />
                 </div>
 
-                {/* Input Box */}
-                <div className="bg-white p-4 border-t border-gray-300">
-                    <form onSubmit={handleSubmit} className="flex items-center">
+                <div className="p-4">
+                    <form
+                        onSubmit={handleSubmit}
+                        className="relative flex items-center"
+                    >
                         <input
                             type="text"
                             value={input}
                             onChange={(e) => setInput(e.target.value)}
                             placeholder="Entrez votre message..."
-                            className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 pr-12"
                         />
                         <button
                             type="submit"
                             disabled={loading}
-                            className="ml-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50"
+                            className="absolute right-2 top-1/2 transform -translate-y-1/2 text-blue-500 hover:text-blue-700 disabled:opacity-50"
                         >
-                            {loading ? "Chargement..." : "Envoyer"}
+                            <Send color="black" fill="black" />
                         </button>
                     </form>
                 </div>
