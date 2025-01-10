@@ -145,7 +145,7 @@ export default function ChatbotPage() {
     if (typeof window !== 'undefined') {
       localStorage.removeItem("chatMessages");
       localStorage.removeItem("pinnedMessages");
-      router.push("/dashboard");
+      router.push("/");
     }
     setMessages([]);
     setPinnedMessages([]);
