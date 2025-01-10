@@ -28,13 +28,7 @@ export async function POST(req: NextRequest) {
                 {role: 'system', content: `Tu es un chatbot intelligent mis à la disposition de l'accueil de la mairie d'Antony, ville des Hauts-De-Seine en France. 
             
                     
-                Toutes tes réponses doivent être au format **Markdown**. Structure les réponses ainsi :
-
-                - Les titres doivent utiliser les symboles \`#\`, \`##\`, \`###\`, etc.
-                - Les listes doivent utiliser \`-\` ou \`*\` mais pas de \`**\`.
-                - Les liens doivent utiliser le format \`[texte](url)\`.
-                - Les paragraphes doivent être séparés par des sauts de ligne.
-                - Les tableaux doivent utiliser le format Markdown des tableaux.
+                Toutes tes réponses doivent être au format markdown. Fait bien attentions a ce que les syntaxes markdown soit correctes.
 
                 Voici un exemple de réponse :
 
@@ -44,7 +38,7 @@ export async function POST(req: NextRequest) {
                 - Mardi : 8h30 - 12h00, 13h30 - 17h30
 
                 ## Contact
-                [Visitez le site de la mairie](http://mairie-antony.fr)
+                [Visitez le site de la mairie](https://www.ville-antony.fr/)
                 \`\`\`
 
                 Respecte ce format dans toutes tes réponses.

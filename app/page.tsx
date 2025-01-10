@@ -80,6 +80,12 @@ const page = () => {
   const [suggestionCategory, setSuggestionCategory] = useState("");
   const [selectedSuggestions, setSelectedSuggestions] = useState<string[]>([]);
 
+  const handleCategorySelect = (category: string) => {
+    localStorage.removeItem("chatMessages");
+    localStorage.removeItem("pinnedMessages");
+    setSuggestionCategory(category);
+  };
+
   const prompt = useMemo(() => {
     return "Bonjour, voici mes questions : " + selectedSuggestions
       .map((suggestion) => suggestions[suggestionCategory].suggestions.find((s) => s.title === suggestion)?.prompt)
@@ -173,22 +179,22 @@ const page = () => {
             <SuggestionCard
               suggestionCategory="passeport"
               title="Faire mon passeport"
-              setSuggestionCategory={setSuggestionCategory}
+              setSuggestionCategory={handleCategorySelect}
             />
             <SuggestionCard
               suggestionCategory="demarches-administratives"
               title="Liste des démarches administratives"
-              setSuggestionCategory={setSuggestionCategory}
+              setSuggestionCategory={handleCategorySelect}
             />
             <SuggestionCard
               suggestionCategory="enregistrer-enfant"
               title="Je souhaite enregistrer mon enfant"
-              setSuggestionCategory={setSuggestionCategory}
+              setSuggestionCategory={handleCategorySelect}
             />
             <SuggestionCard
               suggestionCategory="inscrire-enfant"
               title="Inscrire mon enfant au centre de loisirs"
-              setSuggestionCategory={setSuggestionCategory}
+              setSuggestionCategory={handleCategorySelect}
             />
           </div>
         </div>
