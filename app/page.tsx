@@ -53,12 +53,12 @@ const suggestions: Record<string, { title: string, suggestions: { title: string,
       }
     ]
   },
-  "enregistrer-enfant": {
-    title: "Enregistrer un enfant",
+  "acte-naissance-enfant": {
+    title: "Acte de naissance",
     suggestions: [
       {
-        title: "Enregistrer un enfant",
-        prompt: "je souhaite enregistrer un enfant",
+        title: "Acte de naissance",
+        prompt: "je souhaite faire une acte de naissance pour mon enfant",
       }
     ]
   },
@@ -198,8 +198,8 @@ const page = () => {
               setSuggestionCategory={handleCategorySelect}
             />
             <SuggestionCard
-              suggestionCategory="enregistrer-enfant"
-              title="Je souhaite enregistrer mon enfant"
+              suggestionCategory="enregistrer-acte-enfant"
+              title="je souhaite faire une acte de naissance pour mon enfant"
               setSuggestionCategory={handleCategorySelect}
             />
             <SuggestionCard
