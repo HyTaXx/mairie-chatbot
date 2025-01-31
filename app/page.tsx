@@ -6,7 +6,10 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 
-const suggestions: Record<string, { title: string, suggestions: { title: string, prompt: string }[] }> = {
+const suggestions: Record<
+  string,
+  { title: string; suggestions: { title: string; prompt: string }[] }
+> = {
   "demarches-administratives": {
     title: "Choisissez votre démarche administrative",
     suggestions: [
@@ -24,7 +27,8 @@ const suggestions: Record<string, { title: string, suggestions: { title: string,
       },
       {
         title: "Faire ma CNI",
-        prompt: "je souhaite faire ma carte nationale d'identité pour la première fois",
+        prompt:
+          "je souhaite faire ma carte nationale d'identité pour la première fois",
       },
       {
         title: "Déclarer un enfant",
@@ -37,10 +41,10 @@ const suggestions: Record<string, { title: string, suggestions: { title: string,
       {
         title: "Changement d'adresse",
         prompt: "je souhaite déclarer mon changement d'adresse",
-      }
-    ]
+      },
+    ],
   },
-  "passeport": {
+  passeport: {
     title: "Faire mon passeport",
     suggestions: [
       {
@@ -50,8 +54,8 @@ const suggestions: Record<string, { title: string, suggestions: { title: string,
       {
         title: "Renouveler mon passeport",
         prompt: "je souhaite renouveler mon passeport",
-      }
-    ]
+      },
+    ],
   },
   "acte-naissance-enfant": {
     title: "Acte de naissance",
@@ -59,8 +63,8 @@ const suggestions: Record<string, { title: string, suggestions: { title: string,
       {
         title: "Acte de naissance",
         prompt: "je souhaite faire une acte de naissance pour mon enfant",
-      }
-    ]
+      },
+    ],
   },
   "inscrire-enfant-centre-loisirs": {
     title: "Inscrire mon enfant au centre de loisirs",
@@ -68,10 +72,10 @@ const suggestions: Record<string, { title: string, suggestions: { title: string,
       {
         title: "Inscrire mon enfant au centre de loisirs",
         prompt: "je souhaite inscrire mon enfant au centre de loisirs",
-      }
-    ]
-  }
-}
+      },
+    ],
+  },
+};
 
 const page = () => {
   const router = useRouter();
@@ -86,9 +90,17 @@ const page = () => {
   };
 
   const prompt = useMemo(() => {
-    return "Bonjour, voici mes questions : " + selectedSuggestions
-      .map((suggestion) => suggestions[suggestionCategory].suggestions.find((s) => s.title === suggestion)?.prompt)
-      .join(", ");
+    return (
+      "Bonjour, voici mes questions : " +
+      selectedSuggestions
+        .map(
+          (suggestion) =>
+            suggestions[suggestionCategory].suggestions.find(
+              (s) => s.title === suggestion
+            )?.prompt
+        )
+        .join(", ")
+    );
   }, [selectedSuggestions, suggestionCategory]);
 
   useEffect(() => {
@@ -105,12 +117,27 @@ const page = () => {
             onClick={() => setSuggestionCategory("")}
             className="sticky top-16 flex items-center gap-2 text-xl font-medium text-white bg-[#293670] rounded-lg p-3 mb-20 hover:bg-[#293670] hover:underline"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="size-8">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" />
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              strokeWidth={1.5}
+              stroke="currentColor"
+              className="size-8"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18"
+              />
             </svg>
           </button>
-          <p className="font-medium text-5xl leading-tight pb-3">{suggestions[suggestionCategory].title}</p>
-          <p className="font-medium text-xl text-neutral-400 pb-12">Aidez nous à personnaliser votre experience</p>
+          <p className="font-medium text-5xl leading-tight pb-3">
+            {suggestions[suggestionCategory].title}
+          </p>
+          <p className="font-medium text-xl text-neutral-400 pb-12">
+            Aidez nous à personnaliser votre experience
+          </p>
 
           <div className="flex gap-4 flex-wrap">
             {suggestions[suggestionCategory].suggestions.map((suggestion) => (
@@ -118,23 +145,43 @@ const page = () => {
                 key={suggestion.title}
                 className={clsx(
                   "relative text-xl font-medium border-2 border-[#F3F3F3] rounded-xl px-6 py-5 transition-colors duration-75",
-                  selectedSuggestions.includes(suggestion.title) && "border-[#293670] bg-blue-50"
+                  selectedSuggestions.includes(suggestion.title) &&
+                    "border-[#293670] bg-blue-50"
                 )}
                 onClick={() => {
                   if (selectedSuggestions.includes(suggestion.title)) {
-                    setSelectedSuggestions(selectedSuggestions.filter((s) => s !== suggestion.title));
+                    setSelectedSuggestions(
+                      selectedSuggestions.filter((s) => s !== suggestion.title)
+                    );
                   } else {
-                    setSelectedSuggestions([...selectedSuggestions, suggestion.title]);
+                    setSelectedSuggestions([
+                      ...selectedSuggestions,
+                      suggestion.title,
+                    ]);
                   }
                 }}
               >
                 {suggestion.title}
-                <div className={clsx(
-                  "absolute -top-2 -right-2 bg-[#293670] rounded-full p-1 text-white opacity-0 transition-opacity duration-75",
-                  selectedSuggestions.includes(suggestion.title) && "opacity-100",
-                )}>
-                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="size-5">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" />
+                <div
+                  className={clsx(
+                    "absolute -top-2 -right-2 bg-[#293670] rounded-full p-1 text-white opacity-0 transition-opacity duration-75",
+                    selectedSuggestions.includes(suggestion.title) &&
+                      "opacity-100"
+                  )}
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    strokeWidth={1.5}
+                    stroke="currentColor"
+                    className="size-5"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="m4.5 12.75 6 6 9-13.5"
+                    />
                   </svg>
                 </div>
               </button>
@@ -153,10 +200,14 @@ const page = () => {
         </div>
       ) : (
         <div className="min-h-svh flex flex-col items-center justify-center">
-          <p className="font-medium text-xl text-yellow-900 bg-yellow-100 px-3 py-0.5 rounded mb-4">Votre aide administrative</p>
-          <p className="font-medium text-5xl leading-tight max-w-[24ch] text-center pb-12">Bonjour, de quoi avez-vous besoin aujourd'hui ?</p>
+          <p className="font-medium text-xl text-yellow-900 bg-yellow-100 px-3 py-0.5 rounded mb-4">
+            Votre aide administrative
+          </p>
+          <p className="font-medium text-5xl leading-tight max-w-[24ch] text-center pb-12">
+            Bonjour, de quoi avez-vous besoin aujourd'hui ?
+          </p>
 
-          <form 
+          <form
             className="pl-3 flex w-full max-w-md mb-3 border-2 border-[#F3F3F3] rounded-md shadow-md shadow-[#00000008] overflow-hidden"
             onSubmit={(e) => {
               e.preventDefault();
@@ -177,14 +228,30 @@ const page = () => {
                 type="submit"
                 className="bg-[#293670] text-white p-1 rounded transition-colors duration-75 hover:bg-[#202a58]"
               >
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="size-5">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  strokeWidth={1.5}
+                  stroke="currentColor"
+                  className="size-5"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z"
+                  />
                 </svg>
               </button>
             </div>
           </form>
 
-          <p className="text-[#A8AAAC] text-sm">Tendances: <span className="text-[#858585]">permis, passeport, cantine, sport</span></p>
+          <p className="text-[#A8AAAC] text-sm">
+            Tendances:{" "}
+            <span className="text-[#858585]">
+              permis, passeport, cantine, sport
+            </span>
+          </p>
 
           <div className="grid grid-cols-4 gap-4 pt-24 max-w-5xl">
             <SuggestionCard
@@ -198,8 +265,8 @@ const page = () => {
               setSuggestionCategory={handleCategorySelect}
             />
             <SuggestionCard
-              suggestionCategory="enregistrer-acte-enfant"
-              title="je souhaite faire une acte de naissance pour mon enfant"
+              suggestionCategory="acte-naissance-enfant"
+              title="Je souhaite faire une acte de naissance pour mon enfant"
               setSuggestionCategory={handleCategorySelect}
             />
             <SuggestionCard
