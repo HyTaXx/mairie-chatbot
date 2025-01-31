@@ -8,6 +8,14 @@ import ReactMarkdown from "react-markdown";
 import styles from "./markdown.module.css";
 import clsx from "clsx";
 import { useRouter } from "next/navigation";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 
 export default function ChatbotPage() {
   const router = useRouter();
@@ -205,7 +213,37 @@ export default function ChatbotPage() {
           </div>
         </div>
         <div className="flex flex-col gap-4">
-          <Button onClick={handleClearSession}>Quitter la session</Button>
+          <hr />
+          <div className="flex flex-row gap-2">
+            <Info />
+            <a href="/support">Support</a>
+          </div>
+          <div className="flex flex-row gap-2">
+            <Wrench fill="black" />
+            <a href="/aide">Aide</a>
+          </div>
+          <hr />
+          <Dialog>
+            <DialogTrigger className="bg-[#293670] text-white p-2 rounded-md text-sm">
+              Quitter la session
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader className="flex flex-col gap-2">
+                <DialogTitle className="bg-yellow-200 text-center p-[6px] text-xs self-center w-[150px] rounded">
+                  Fin de conversation
+                </DialogTitle>
+                <DialogDescription className="flex flex-col gap-4">
+                  <span className="text-2xl text-black text-center w-[250px] self-center">
+                    Merci d'avoir utilisé Hill. À bientôt 👋
+                  </span>
+                  <span className="border-b-2 border-solid border-gray-300"></span>
+                  <Button className="w-2/5 self-end bg-[#293670]">
+                    <a href="/">Retourner à l'accueil</a>
+                  </Button>
+                </DialogDescription>
+              </DialogHeader>
+            </DialogContent>
+          </Dialog>
         </div>
       </div>
 
