@@ -19,9 +19,9 @@ export async function POST(req: NextRequest) {
 
     const encoder = new TextEncoder();
 
-    console.log(process.cwd());
+    console.warn('path',process.cwd());
 
-    const systemPrompt = await fs.readFile(`${process.cwd()}/public/data.txt`, 'utf-8');
+    const systemPrompt = await fs.readFile(`${process.cwd()}/app/api/chat/data.txt`, 'utf-8');
 
     // Créer un flux pour transmettre les données incrémentalement
     const stream = new ReadableStream({
