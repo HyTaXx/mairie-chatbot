@@ -1,183 +1,284 @@
 "use client";
-import React from "react";
-import { useState } from "react";
 
-// Helper function to render the response
-const renderResponse = (response: string) => {
-    return (
-        <div className="space-y-4 text-gray-800 leading-relaxed">
-            {response.split("\n").map((line, index) => {
-                // Vérifier si une ligne est un titre principal
-                if (line.startsWith("# ")) {
-                    const title = line.replace(/^# /, "").trim();
-                    return (
-                        <h1
-                            key={index}
-                            className="text-2xl font-bold text-gray-900"
-                        >
-                            {title}
-                        </h1>
-                    );
-                }
+import { SuggestionCard } from "@/components/SuggestionCard";
+import clsx from "clsx";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useEffect, useMemo, useState } from "react";
 
-                // Vérifier si une ligne est un sous-titre
-                if (line.startsWith("## ")) {
-                    const subtitle = line.replace(/^## /, "").trim();
-                    return (
-                        <h2
-                            key={index}
-                            className="text-xl font-bold text-gray-800"
-                        >
-                            {subtitle}
-                        </h2>
-                    );
-                }
-
-                // Vérifier si la ligne commence par une puce ou un numéro
-                if (line.startsWith("- ") || line.match(/^\d+\./)) {
-                    const content = line.replace(/^(-|\d+\.)\s*/, "").trim();
-                    return (
-                        <li key={index} className="list-disc list-inside ml-6">
-                            {content}
-                        </li>
-                    );
-                }
-
-                // Vérifier si la ligne contient un lien Markdown
-                const linkRegex = /\[([^\]]+)\]\(([^)]+)\)/g;
-                if (linkRegex.test(line)) {
-                    // Diviser le texte en parties avec ou sans lien
-                    const parts = [];
-                    let lastIndex = 0;
-
-                    line.replace(linkRegex, (match, text, url, offset) => {
-                        // Ajouter le texte avant le lien
-                        if (offset > lastIndex) {
-                            parts.push(line.slice(lastIndex, offset));
-                        }
-                        // Ajouter le lien cliquable
-                        parts.push(
-                            <a
-                                key={`${index}-${offset}`}
-                                href={url}
-                                className="text-blue-600 underline"
-                                target="_blank"
-                                rel="noopener noreferrer"
-                            >
-                                {text}
-                            </a>
-                        );
-                        lastIndex = offset + match.length;
-                        return match;
-                    });
-
-                    // Ajouter le texte après le dernier lien
-                    if (lastIndex < line.length) {
-                        parts.push(line.slice(lastIndex));
-                    }
-
-                    // Retourner les parties combinées dans un paragraphe
-                    return (
-                        <p key={index}>
-                            {parts.map((part, i) =>
-                                typeof part === "string" ? (
-                                    <span key={i}>{part}</span>
-                                ) : (
-                                    part
-                                )
-                            )}
-                        </p>
-                    );
-                }
-
-                // Par défaut, rendre la ligne comme un paragraphe
-                return <p key={index}>{line.trim()}</p>;
-            })}
-        </div>
-    );
+const suggestions: Record<
+  string,
+  { title: string; suggestions: { title: string; prompt: string }[] }
+> = {
+  "demarches-administratives": {
+    title: "Choisissez votre démarche administrative",
+    suggestions: [
+      {
+        title: "Renouveler mon passeport",
+        prompt: "je souhaite renouveler mon passeport",
+      },
+      {
+        title: "Faire mon passeport",
+        prompt: "je souhaite faire mon passeport pour la première fois",
+      },
+      {
+        title: "Renouveler ma CNI",
+        prompt: "je souhaite renouveler ma carte nationale d'identité",
+      },
+      {
+        title: "Faire ma CNI",
+        prompt:
+          "je souhaite faire ma carte nationale d'identité pour la première fois",
+      },
+      {
+        title: "Déclarer un enfant",
+        prompt: "je souhaite déclarer la naissance de mon enfant",
+      },
+      {
+        title: "Déclarer un mariage",
+        prompt: "je souhaite déclarer un mariage",
+      },
+      {
+        title: "Changement d'adresse",
+        prompt: "je souhaite déclarer mon changement d'adresse",
+      },
+    ],
+  },
+  passeport: {
+    title: "Faire mon passeport",
+    suggestions: [
+      {
+        title: "Faire mon passeport",
+        prompt: "je souhaite faire mon passeport pour la première fois",
+      },
+      {
+        title: "Renouveler mon passeport",
+        prompt: "je souhaite renouveler mon passeport",
+      },
+    ],
+  },
+  "acte-naissance-enfant": {
+    title: "Acte de naissance",
+    suggestions: [
+      {
+        title: "Acte de naissance",
+        prompt: "je souhaite faire une acte de naissance pour mon enfant",
+      },
+    ],
+  },
+  "inscrire-enfant-centre-loisirs": {
+    title: "Inscrire mon enfant au centre de loisirs",
+    suggestions: [
+      {
+        title: "Inscrire mon enfant au centre de loisirs",
+        prompt: "je souhaite inscrire mon enfant au centre de loisirs",
+      },
+    ],
+  },
 };
 
-// Usage in the UI
-export default function ChatbotPage() {
-    const [message, setMessage] = useState("");
-    const [response, setResponse] = useState<string | null>(null);
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
+const page = () => {
+  const router = useRouter();
+  const [suggestionCategory, setSuggestionCategory] = useState("");
+  const [selectedSuggestions, setSelectedSuggestions] = useState<string[]>([]);
+  const [search, setSearch] = useState("");
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        setLoading(true);
-        setError(null);
-        setResponse("");
+  const handleCategorySelect = (category: string) => {
+    localStorage.removeItem("chatMessages");
+    localStorage.removeItem("pinnedMessages");
+    setSuggestionCategory(category);
+  };
 
-        try {
-            const res = await fetch("/api/chat", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ userMessage: message }),
-            });
-
-            if (!res.ok) {
-                throw new Error("Erreur lors de la communication avec l'API");
-            }
-
-            const reader = res.body?.getReader();
-            const decoder = new TextDecoder();
-            let done = false;
-
-            while (!done) {
-                const { value, done: doneReading } = await reader!.read();
-                done = doneReading;
-                const chunk = decoder.decode(value, { stream: true });
-                setResponse((prev) => prev + chunk); // Ajouter le texte en flux
-            }
-        } catch (err: any) {
-            setError(err.message);
-        } finally {
-            setLoading(false);
-        }
-    };
-
+  const prompt = useMemo(() => {
     return (
-        <div className="flex min-h-screen items-center justify-center p-4">
-            <div className="w-full max-w-2xl bg-white p-6 rounded-lg shadow-md">
-                <h1 className="text-2xl font-bold mb-4">
-                    Chatbot de la Mairie d&apos;Antony
-                </h1>
-                <form onSubmit={handleSubmit} className="space-y-4">
-                    <label htmlFor="message" className="block font-medium">
-                        Entrez votre question :
-                    </label>
-                    <input
-                        id="message"
-                        type="text"
-                        value={message}
-                        onChange={(e) => setMessage(e.target.value)}
-                        placeholder="Ex: Quels sont les horaires d'ouverture ?"
-                        className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        required
-                    />
-                    <button
-                        type="submit"
-                        disabled={loading}
-                        className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 disabled:opacity-50"
-                    >
-                        {loading ? "Chargement..." : "Envoyer"}
-                    </button>
-                </form>
-
-                {error && (
-                    <p className="mt-4 text-sm text-red-500">
-                        Erreur : {error}
-                    </p>
-                )}
-
-                {response && (
-                    <div className="mt-6 p-6 bg-gray-50 rounded-lg shadow">
-                        {renderResponse(response)}
-                    </div>
-                )}
-            </div>
-        </div>
+      "Bonjour, voici mes questions : " +
+      selectedSuggestions
+        .map(
+          (suggestion) =>
+            suggestions[suggestionCategory].suggestions.find(
+              (s) => s.title === suggestion
+            )?.prompt
+        )
+        .join(", ")
     );
-}
+  }, [selectedSuggestions, suggestionCategory]);
+
+  useEffect(() => {
+    if (!suggestionCategory) {
+      setSelectedSuggestions([]);
+    }
+  }, [suggestionCategory]);
+
+  return (
+    <>
+      {suggestionCategory ? (
+        <div className="relative min-h-svh p-16">
+          <button
+            onClick={() => setSuggestionCategory("")}
+            className="sticky top-16 flex items-center gap-2 text-xl font-medium text-white bg-[#293670] rounded-lg p-3 mb-20 hover:bg-[#293670] hover:underline"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              strokeWidth={1.5}
+              stroke="currentColor"
+              className="size-8"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18"
+              />
+            </svg>
+          </button>
+          <p className="font-medium text-5xl leading-tight pb-3">
+            {suggestions[suggestionCategory].title}
+          </p>
+          <p className="font-medium text-xl text-neutral-400 pb-12">
+            Aidez nous à personnaliser votre experience
+          </p>
+
+          <div className="flex gap-4 flex-wrap">
+            {suggestions[suggestionCategory].suggestions.map((suggestion) => (
+              <button
+                key={suggestion.title}
+                className={clsx(
+                  "relative text-xl font-medium border-2 border-[#F3F3F3] rounded-xl px-6 py-5 transition-colors duration-75",
+                  selectedSuggestions.includes(suggestion.title) &&
+                    "border-[#293670] bg-blue-50"
+                )}
+                onClick={() => {
+                  if (selectedSuggestions.includes(suggestion.title)) {
+                    setSelectedSuggestions(
+                      selectedSuggestions.filter((s) => s !== suggestion.title)
+                    );
+                  } else {
+                    setSelectedSuggestions([
+                      ...selectedSuggestions,
+                      suggestion.title,
+                    ]);
+                  }
+                }}
+              >
+                {suggestion.title}
+                <div
+                  className={clsx(
+                    "absolute -top-2 -right-2 bg-[#293670] rounded-full p-1 text-white opacity-0 transition-opacity duration-75",
+                    selectedSuggestions.includes(suggestion.title) &&
+                      "opacity-100"
+                  )}
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    strokeWidth={1.5}
+                    stroke="currentColor"
+                    className="size-5"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="m4.5 12.75 6 6 9-13.5"
+                    />
+                  </svg>
+                </div>
+              </button>
+            ))}
+          </div>
+
+          <Link
+            href={{ pathname: "/dashboard", query: { prompt } }}
+            className={clsx(
+              "absolute bottom-16 right-16 bg-[#293670] text-white text-xl rounded-lg py-3 px-6 transition duration-75",
+              selectedSuggestions.length === 0 && "opacity-20 grayscale"
+            )}
+          >
+            Suivant
+          </Link>
+        </div>
+      ) : (
+        <div className="min-h-svh flex flex-col items-center justify-center">
+          <p className="font-medium text-xl text-yellow-900 bg-yellow-100 px-3 py-0.5 rounded mb-4">
+            Votre aide administrative
+          </p>
+          <p className="font-medium text-5xl leading-tight max-w-[24ch] text-center pb-12">
+            Bonjour, de quoi avez-vous besoin aujourd'hui ?
+          </p>
+
+          <form
+            className="pl-3 flex w-full max-w-md mb-3 border-2 border-[#F3F3F3] rounded-md shadow-md shadow-[#00000008] overflow-hidden"
+            onSubmit={(e) => {
+              e.preventDefault();
+              localStorage.clear();
+              router.push(`/dashboard?prompt=${search}`);
+            }}
+          >
+            <input
+              type="text"
+              placeholder="Posez moi une question"
+              className="flex-1 outline-none"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              autoFocus
+            />
+            <div className="aspect-square flex-none p-1 h-fit flex items-center justify-center text-neutral-600">
+              <button
+                type="submit"
+                className="bg-[#293670] text-white p-1 rounded transition-colors duration-75 hover:bg-[#202a58]"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  strokeWidth={1.5}
+                  stroke="currentColor"
+                  className="size-5"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z"
+                  />
+                </svg>
+              </button>
+            </div>
+          </form>
+
+          <p className="text-[#A8AAAC] text-sm">
+            Tendances:{" "}
+            <span className="text-[#858585]">
+              permis, passeport, cantine, sport
+            </span>
+          </p>
+
+          <div className="grid grid-cols-4 gap-4 pt-24 max-w-5xl">
+            <SuggestionCard
+              suggestionCategory="passeport"
+              title="Faire mon passeport"
+              setSuggestionCategory={handleCategorySelect}
+            />
+            <SuggestionCard
+              suggestionCategory="demarches-administratives"
+              title="Liste des démarches administratives"
+              setSuggestionCategory={handleCategorySelect}
+            />
+            <SuggestionCard
+              suggestionCategory="acte-naissance-enfant"
+              title="Je souhaite faire une acte de naissance pour mon enfant"
+              setSuggestionCategory={handleCategorySelect}
+            />
+            <SuggestionCard
+              suggestionCategory="inscrire-enfant-centre-loisirs"
+              title="Inscrire mon enfant au centre de loisirs"
+              setSuggestionCategory={handleCategorySelect}
+            />
+          </div>
+        </div>
+      )}
+    </>
+  );
+};
+
+export default page;
