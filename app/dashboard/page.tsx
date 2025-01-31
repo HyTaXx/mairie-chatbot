@@ -3,6 +3,11 @@
 import { useState, useEffect, useRef } from "react";
 import { Clipboard, Pin, Info, Wrench, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useSearchParams } from "next/navigation";
+import ReactMarkdown from "react-markdown";
+import styles from "./markdown.module.css";
+import clsx from "clsx";
+import { useRouter } from "next/navigation";
 import {
   Dialog,
   DialogContent,
@@ -12,176 +17,57 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 
-const renderResponse = (response: string) => {
-  return (
-    <div className="space-y-4 text-gray-800 leading-relaxed">
-      {response.split("\n").map((line, index) => {
-        if (line.startsWith("# ")) {
-          return (
-            <h1
-              key={`${index}-header`}
-              className="text-xl font-bold text-gray-900 mb-2"
-            >
-              {line.replace("# ", "").trim()}
-            </h1>
-          );
-        }
-        if (line.startsWith("## ")) {
-          return (
-            <h2
-              key={`${index}-subheader`}
-              className="text-lg font-semibold text-gray-800 mb-1"
-            >
-              {line.replace("## ", "").trim()}
-            </h2>
-          );
-        }
-        if (line.startsWith("### ")) {
-          return (
-            <h3
-              key={`${index}-subsubheader`}
-              className="text-md font-semibold text-gray-800 mb-1"
-            >
-              {line.replace("### ", "").trim()}
-            </h3>
-          );
-        }
-        if (line.startsWith("**") && line.endsWith("**")) {
-          return (
-            <p key={`${index}-bold`} className="font-bold">
-              {line.replace(/\*\*/g, "").trim()}
-            </p>
-          );
-        }
-        if (line.startsWith("- ") || line.match(/^\d+\./)) {
-          return (
-            <li key={`${index}-list`} className="list-disc list-inside ml-6">
-              {line.replace(/^(-|\d+\.)\s*/, "").trim()}
-            </li>
-          );
-        }
-        const linkRegex = /\[([^\]]+)\]\(([^)]+)\)/g;
-        if (linkRegex.test(line)) {
-          const parts = [];
-          let lastIndex = 0;
-          line.replace(linkRegex, (match, text, url, offset) => {
-            if (offset > lastIndex) {
-              parts.push(line.slice(lastIndex, offset));
-            }
-            parts.push(
-              <a
-                key={`${index}-${offset}`}
-                href={url}
-                className="text-blue-600 underline"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                {text}
-              </a>
-            );
-            lastIndex = offset + match.length;
-            return match;
-          });
-          if (lastIndex < line.length) {
-            parts.push(line.slice(lastIndex));
-          }
-          return (
-            <p key={`${index}-paragraph`}>
-              {parts.map((part, i) =>
-                typeof part === "string" ? (
-                  <span key={`${index}-${i}`}>{part}</span>
-                ) : (
-                  part
-                )
-              )}
-            </p>
-          );
-        }
-        const urlRegex = /(http[s]?:\/\/[^\s]+)/g;
-        if (urlRegex.test(line)) {
-          return (
-            <p key={`${index}-url`}>
-              {line.split(urlRegex).map((part, i) =>
-                urlRegex.test(part) ? (
-                  <a
-                    key={`${index}-${i}`}
-                    href={part}
-                    className="text-blue-600 underline"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    {part}
-                  </a>
-                ) : (
-                  part
-                )
-              )}
-            </p>
-          );
-        }
-        return (
-          <p key={`${index}-text`} className="text-gray-700">
-            {line.trim()}
-          </p>
-        );
-      })}
-    </div>
-  );
-};
-
 export default function ChatbotPage() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const [messages, setMessages] = useState<
     { role: "user" | "assistant"; content: string; id: number }[]
   >(() => {
-    const savedMessages = localStorage.getItem("chatMessages");
-    return savedMessages ? JSON.parse(savedMessages) : [];
+    if (typeof window !== "undefined") {
+      const savedMessages = localStorage.getItem("chatMessages");
+      return savedMessages ? JSON.parse(savedMessages) : [];
+    }
+    return [];
   });
 
   const [pinnedMessages, setPinnedMessages] = useState<
     { id: number; content: string }[]
   >(() => {
-    const savedPinned = localStorage.getItem("pinnedMessages");
-    return savedPinned ? JSON.parse(savedPinned) : [];
+    if (typeof window !== "undefined") {
+      const savedPinned = localStorage.getItem("pinnedMessages");
+      return savedPinned ? JSON.parse(savedPinned) : [];
+    }
+    return [];
   });
 
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
+  const initialPromptProcessed = useRef(false);
 
   const nextMessageId = useRef(
     messages.length > 0 ? messages[messages.length - 1].id + 1 : 1
   );
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+    const prompt = searchParams.get("prompt");
+    if (prompt && !initialPromptProcessed.current && messages.length === 0) {
+      initialPromptProcessed.current = true;
+      setMessages([
+        { role: "user", content: prompt, id: nextMessageId.current++ },
+      ]);
+      handleSubmitMessage(prompt);
+    }
+  }, [searchParams]);
 
-  // Save messages and pinned messages to localStorage on change
-  useEffect(() => {
-    localStorage.setItem("chatMessages", JSON.stringify(messages));
-  }, [messages]);
-
-  useEffect(() => {
-    localStorage.setItem("pinnedMessages", JSON.stringify(pinnedMessages));
-  }, [pinnedMessages]);
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!input.trim()) return;
-
-    setMessages((prev) => [
-      ...prev,
-      { role: "user", content: input, id: nextMessageId.current++ },
-    ]);
-    setInput("");
-    setLoading(true);
-
+  const handleSubmitMessage = async (message: string) => {
     try {
+      setLoading(true);
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userMessage: input }),
+        body: JSON.stringify({ userMessage: message }),
       });
 
       if (!res.ok) {
@@ -236,11 +122,43 @@ export default function ChatbotPage() {
     }
   };
 
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!input.trim()) return;
+
+    setMessages((prev) => [
+      ...prev,
+      { role: "user", content: input, id: nextMessageId.current++ },
+    ]);
+    setInput("");
+    await handleSubmitMessage(input);
+  };
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
+
+  // Save messages and pinned messages to localStorage on change
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      localStorage.setItem("chatMessages", JSON.stringify(messages));
+    }
+  }, [messages]);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      localStorage.setItem("pinnedMessages", JSON.stringify(pinnedMessages));
+    }
+  }, [pinnedMessages]);
+
   const handleClearSession = () => {
-    /*localStorage.removeItem("chatMessages");
-        localStorage.removeItem("pinnedMessages");
-        setMessages([]);
-        setPinnedMessages([]);*/
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("chatMessages");
+      localStorage.removeItem("pinnedMessages");
+      router.push("/");
+    }
+    setMessages([]);
+    setPinnedMessages([]);
   };
 
   const cleanAndTruncateText = (text: string, length: number) => {
@@ -254,7 +172,6 @@ export default function ChatbotPage() {
   };
 
   const handleCopy = (content: string) => {
-    //TODO UPDATE
     navigator.clipboard.writeText(content);
     alert("Texte copié !");
   };
@@ -306,9 +223,6 @@ export default function ChatbotPage() {
             <a href="/aide">Aide</a>
           </div>
           <hr />
-          <Button className="bg-[#293670]" onClick={handleClearSession}>
-            Réinitiliser les conversations
-          </Button>
           <Dialog>
             <DialogTrigger className="bg-[#293670] text-white p-2 rounded-md text-sm">
               Quitter la session
@@ -337,14 +251,14 @@ export default function ChatbotPage() {
       <div className="flex-1 flex flex-col">
         <div className="flex-1 overflow-y-auto p-4">
           <hr className="pb-4" />
-
           {messages.map((message) => (
             <div
               key={message.id}
-              id={message.id.toString()}
-              className={`mb-4 ${
-                message.role === "user" ? "text-right" : "text-left"
-              }`}
+              id={String(message.id)}
+              className={clsx(
+                "flex flex-col mb-4",
+                message.role === "user" ? "items-end" : "items-start"
+              )}
             >
               <div
                 className={`inline-block max-w-md p-3 rounded-lg ${
@@ -353,13 +267,16 @@ export default function ChatbotPage() {
                     : "bg-gray-200 text-gray-900"
                 }`}
               >
-                {message.role === "assistant"
-                  ? renderResponse(message.content)
-                  : message.content}
+                {message.role === "user" ? (
+                  message.content
+                ) : (
+                  <ReactMarkdown className={styles.markdown}>
+                    {message.content.replaceAll("```", "")}
+                  </ReactMarkdown>
+                )}
               </div>
-
               {message.role === "assistant" && (
-                <div className="mt-2 flex justify-start space-x-4">
+                <div className="mt-4 flex justify-start space-x-4">
                   <button
                     onClick={() => handleCopy(message.content)}
                     className="text-gray-500 hover:text-gray-700 flex items-center"
