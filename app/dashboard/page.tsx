@@ -188,12 +188,12 @@ export default function ChatbotPage() {
       <div className="w-1/4 p-4 overflow-y-auto flex flex-col justify-between">
         <div>
           <div className="">
-            <img src="logo-placeholder.png" alt="" width={40} />
+            <img src="hill-logo.png" alt="" width={100} />
           </div>
           <div className="flex gap-2 items-center mt-8">
-            <Pin fill="black" />
-            <h2 className="text-lg font-bold mb-4 items-center h-[24px]">
-              Épinglés
+            <Pin fill="black" className="mt-1" />
+            <h2 className="text-lg font-bold items-center h-[24px]">
+              Messages épinglés
             </h2>
           </div>
           <div className="relative border-l-2 border-slate-200 pl-2 ml-2">
@@ -219,7 +219,7 @@ export default function ChatbotPage() {
             </DialogTrigger>
             <DialogContent>
               <DialogHeader className="flex flex-col gap-2">
-                <DialogTitle className="bg-yellow-200 text-center p-[6px] text-xs self-center w-[150px] rounded">
+                <DialogTitle className="bg-yellow-100 text-center p-[6px] text-xs self-center w-[150px] rounded">
                   Fin de conversation
                 </DialogTitle>
                 <DialogDescription className="flex flex-col gap-4">
