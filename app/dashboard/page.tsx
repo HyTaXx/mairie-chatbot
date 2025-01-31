@@ -4,8 +4,8 @@ import { useState, useEffect, useRef } from "react";
 import { Clipboard, Pin, Info, Wrench, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useSearchParams } from "next/navigation";
-import ReactMarkdown from 'react-markdown'
-import styles from './markdown.module.css'
+import ReactMarkdown from "react-markdown";
+import styles from "./markdown.module.css";
 import clsx from "clsx";
 import { useRouter } from "next/navigation";
 
@@ -15,7 +15,7 @@ export default function ChatbotPage() {
   const [messages, setMessages] = useState<
     { role: "user" | "assistant"; content: string; id: number }[]
   >(() => {
-    if (typeof window !== 'undefined') {
+    if (typeof window !== "undefined") {
       const savedMessages = localStorage.getItem("chatMessages");
       return savedMessages ? JSON.parse(savedMessages) : [];
     }
@@ -25,7 +25,7 @@ export default function ChatbotPage() {
   const [pinnedMessages, setPinnedMessages] = useState<
     { id: number; content: string }[]
   >(() => {
-    if (typeof window !== 'undefined') {
+    if (typeof window !== "undefined") {
       const savedPinned = localStorage.getItem("pinnedMessages");
       return savedPinned ? JSON.parse(savedPinned) : [];
     }
@@ -46,7 +46,9 @@ export default function ChatbotPage() {
     const prompt = searchParams.get("prompt");
     if (prompt && !initialPromptProcessed.current && messages.length === 0) {
       initialPromptProcessed.current = true;
-      setMessages([{ role: "user", content: prompt, id: nextMessageId.current++ }]);
+      setMessages([
+        { role: "user", content: prompt, id: nextMessageId.current++ },
+      ]);
       handleSubmitMessage(prompt);
     }
   }, [searchParams]);
@@ -130,19 +132,19 @@ export default function ChatbotPage() {
 
   // Save messages and pinned messages to localStorage on change
   useEffect(() => {
-    if (typeof window !== 'undefined') {
+    if (typeof window !== "undefined") {
       localStorage.setItem("chatMessages", JSON.stringify(messages));
     }
   }, [messages]);
 
   useEffect(() => {
-    if (typeof window !== 'undefined') {
+    if (typeof window !== "undefined") {
       localStorage.setItem("pinnedMessages", JSON.stringify(pinnedMessages));
     }
   }, [pinnedMessages]);
 
   const handleClearSession = () => {
-    if (typeof window !== 'undefined') {
+    if (typeof window !== "undefined") {
       localStorage.removeItem("chatMessages");
       localStorage.removeItem("pinnedMessages");
       router.push("/");
@@ -168,9 +170,7 @@ export default function ChatbotPage() {
 
   const handlePin = (id: number, content: string) => {
     setPinnedMessages((prev) =>
-      prev.find((msg) => msg.id === id)
-        ? prev
-        : [...prev, { id, content }]
+      prev.find((msg) => msg.id === id) ? prev : [...prev, { id, content }]
     );
   };
 
@@ -205,19 +205,7 @@ export default function ChatbotPage() {
           </div>
         </div>
         <div className="flex flex-col gap-4">
-          <hr />
-          <div className="flex flex-row gap-2">
-            <Info />
-            <a href="/support">Support</a>
-          </div>
-          <div className="flex flex-row gap-2">
-            <Wrench fill="black" />
-            <a href="/aide">Aide</a>
-          </div>
-          <hr />
-          <Button onClick={handleClearSession}>
-            Quitter la session
-          </Button>
+          <Button onClick={handleClearSession}>Quitter la session</Button>
         </div>
       </div>
 
@@ -235,56 +223,45 @@ export default function ChatbotPage() {
               )}
             >
               <div
-                className={`inline-block max-w-md p-3 rounded-lg ${message.role === "user"
-                  ? "bg-blue-500 text-white"
-                  : "bg-gray-200 text-gray-900"
-                  }`}
+                className={`inline-block max-w-md p-3 rounded-lg ${
+                  message.role === "user"
+                    ? "bg-blue-500 text-white"
+                    : "bg-gray-200 text-gray-900"
+                }`}
               >
-                {message.role === "user" ? message.content : (
+                {message.role === "user" ? (
+                  message.content
+                ) : (
                   <ReactMarkdown className={styles.markdown}>
                     {message.content.replaceAll("```", "")}
                   </ReactMarkdown>
                 )}
               </div>
               {message.role === "assistant" && (
-                  <div className="mt-4 flex justify-start space-x-4">
-                    <button
-                      onClick={() =>
-                        handleCopy(message.content)
-                      }
-                      className="text-gray-500 hover:text-gray-700 flex items-center"
-                    >
-                      <Clipboard size={18} fill="black" />
-                      <span className="ml-1 text-sm">
-                        Copier
-                      </span>
-                    </button>
-                    <button
-                      onClick={() =>
-                        handlePin(
-                          message.id,
-                          message.content
-                        )
-                      }
-                      className="text-gray-500 hover:text-gray-700 flex items-center"
-                    >
-                      <Pin size={18} fill="black" />
-                      <span className="ml-1 text-sm">
-                        Épingler
-                      </span>
-                    </button>
-                  </div>
-                )}
+                <div className="mt-4 flex justify-start space-x-4">
+                  <button
+                    onClick={() => handleCopy(message.content)}
+                    className="text-gray-500 hover:text-gray-700 flex items-center"
+                  >
+                    <Clipboard size={18} fill="black" />
+                    <span className="ml-1 text-sm">Copier</span>
+                  </button>
+                  <button
+                    onClick={() => handlePin(message.id, message.content)}
+                    className="text-gray-500 hover:text-gray-700 flex items-center"
+                  >
+                    <Pin size={18} fill="black" />
+                    <span className="ml-1 text-sm">Épingler</span>
+                  </button>
+                </div>
+              )}
             </div>
           ))}
           <div ref={messagesEndRef} />
         </div>
 
         <div className="p-4">
-          <form
-            onSubmit={handleSubmit}
-            className="relative flex items-center"
-          >
+          <form onSubmit={handleSubmit} className="relative flex items-center">
             <input
               type="text"
               value={input}
