@@ -213,16 +213,6 @@ export default function ChatbotPage() {
           </div>
         </div>
         <div className="flex flex-col gap-4">
-          <hr />
-          <div className="flex flex-row gap-2">
-            <Info />
-            <a href="/support">Support</a>
-          </div>
-          <div className="flex flex-row gap-2">
-            <Wrench fill="black" />
-            <a href="/aide">Aide</a>
-          </div>
-          <hr />
           <Dialog>
             <DialogTrigger className="bg-[#293670] text-white p-2 rounded-md text-sm">
               Quitter la session
