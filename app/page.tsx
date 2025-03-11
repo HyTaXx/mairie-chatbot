@@ -199,9 +199,9 @@ const page = () => {
           </Link>
         </div>
       ) : (
-        <div className="min-h-svh flex flex-col items-center justify-center">
+        <div className="min-h-svh flex flex-col items-center justify-center p-4 pt-16 sm:px-0">
           <p className="font-medium text-xl text-yellow-900 bg-yellow-100 px-3 py-0.5 rounded mb-4">
-            Votre aide administrative
+            Hill, votre aide administrative de la ville d'Antony
           </p>
           <p className="font-medium text-5xl leading-tight max-w-[24ch] text-center pb-12">
             Bonjour, de quoi avez-vous besoin aujourd'hui ?
@@ -253,7 +253,7 @@ const page = () => {
             </span>
           </p>
 
-          <div className="grid grid-cols-4 gap-4 pt-24 max-w-5xl">
+          <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 pt-24 max-w-5xl">
             <SuggestionCard
               suggestionCategory="passeport"
               title="Faire mon passeport"

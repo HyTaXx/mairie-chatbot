@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Mistral } from '@mistralai/mistralai';
 import { promises as fs } from 'fs';
+import { system_prompt } from "./data";
 
 const apiKey = process.env.MISTRAL_API_KEY;
 
@@ -19,7 +20,9 @@ export async function POST(req: NextRequest) {
 
     const encoder = new TextEncoder();
 
-    const systemPrompt = await fs.readFile(`${process.cwd()}/app/api/chat/data.txt`, 'utf-8');
+    console.warn('path',process.cwd());
+
+    //const systemPrompt = await fs.readFile(`/app/api/chat/data.txt`, 'utf-8');
 
     // Créer un flux pour transmettre les données incrémentalement
     const stream = new ReadableStream({
@@ -148,7 +151,7 @@ export async function POST(req: NextRequest) {
             // Tel : 01 40 96 71 00
             
             // Adopte un ton poli et professionnel.`},
-                {role: 'system', content: `Tu es un chatbot intelligent mis à la disposition de l'accueil de la mairie d'Antony, ville des Hauts-De-Seine en France. ${systemPrompt}`},
+                {role: 'system', content: `Tu es un chatbot intelligent mis à la disposition de l'accueil de la mairie d'Antony, ville des Hauts-De-Seine en France. ${system_prompt}`},
                 {role: 'user', content: userMessage}],
             });
 

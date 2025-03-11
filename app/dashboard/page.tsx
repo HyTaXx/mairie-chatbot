@@ -183,9 +183,9 @@ export default function ChatbotPage() {
   };
 
   return (
-    <div className="flex h-screen p-4">
+    <div className="flex flex-col h-screen p-4 sm:flex-row">
       {/* Sidebar */}
-      <div className="w-1/4 p-4 overflow-y-auto flex flex-col justify-between">
+      <div className="p-4 flex flex-col gap-4 justify-between sm:w-1/4">
         <div>
           <div className="">
             <img src="hill-logo.png" alt="" width={100} />
